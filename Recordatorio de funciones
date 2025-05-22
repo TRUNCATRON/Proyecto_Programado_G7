@@ -1,0 +1,19 @@
+Funciones de cada cosa en el código:
+1.
+import pygame
+import random
+pygame.init()
+#Importan librerias a usar e inicia módulos de Pygame
+2.
+ANCHO, ALTURA = 800, 400
+pantalla = pygame.display.set_mode((ANCHO, ALTURA))
+pygame.display.set_caption("Wagon Wild")
+
+clock = pygame.time.Clock()
+FPS = 60
+#Crea ventana de juego 800x400pix, y limita juego a 60fps
+
+3.
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+PISO = ALTURA - 50
