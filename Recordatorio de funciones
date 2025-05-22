@@ -1,9 +1,8 @@
 Funciones de cada cosa en el código:
 1.
 import pygame
-import random
 pygame.init()
-#Importan librerias a usar e inicia módulos de Pygame
+#Importan libreria a usar e inicia módulos de Pygame
 2.
 ANCHO, ALTURA = 800, 400
 pantalla = pygame.display.set_mode((ANCHO, ALTURA))
