@@ -3,6 +3,7 @@ Funciones de cada cosa en el código:
 import pygame
 pygame.init()
 #Importan libreria a usar e inicia módulos de Pygame
+
 2.
 ANCHO, ALTURA = 800, 400
 pantalla = pygame.display.set_mode((ANCHO, ALTURA))
@@ -10,9 +11,104 @@ pygame.display.set_caption("Wagon Wild")
 
 clock = pygame.time.Clock()
 FPS = 60
-#Crea ventana de juego 800x400pix, y limita juego a 60fps
+#Crea ventana de juego 800x400pix + titulo, y limita juego a 60fps
 
 3.
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 PISO = ALTURA - 50
+#Asignacion basica de colores (tentativo hasta encontrar como ajustar escenario a parecer mina) y definir a qué altura estará el suelo
+
+4.
+carro_ancho, carro_altura = 50, 50
+carro_x = 100
+carro_y = PISO - carro_altura
+carro_vel_y = 0
+salto = False
+gravedad = 1
+#Asigna tamaño a carrito + posición inicial. carro_vel_y es velocidad vertical
+#salto es False para ayudar a indicar si el personaje está en el aire y así evitar salto doble
+#gravedad es para que el carro caiga luego de un salto
+
+5.
+obstaculos = []
+obstaculo_ancho = 40
+obstaculo_alto = 60
+obstaculo_vel = 6
+spawn = 0
+#Lista inicial de obstaculos(preparacion para que sean agregados de manera dinamica)
+#Tamaño de obstaculos y la velocidad que se mueven hacia la izquierda
+#spawn =0 es contador inicial para crear los obstaculos
+
+6.
+def hacer_carrito(x, y):
+    pygame.draw.rect(pantalla, (200, 0, 0), (x, y, carro_ancho, carro_altura))
+#Dibuja un cuadro de color rojo (personaje por ahora hasta poder ingresar imagen de un carrito) en la pantalla de juego.
+#Siguiente set de parentesis es relacionado a la posicion del cuadro y su tamaño (establecido anteriormente)
+
+def crear_obstaculos(obs_list):
+    for obs in obs_list:
+        pygame.draw.rect(pantalla, (0, 200, 0), obs)
+#Se recorre los obstaculos dentro de una lista (obs_list es un nombre temporal para la lista de obstaculos)
+#Dibuja rectangulos que simulan las piedras (obstaculos)
+
+7.
+running = True
+while running:
+#Bucle que seguirá corriendo mientras el juego se encuentre activo
+
+8.
+pygame.draw.line(pantalla, BLACK, (0, PISO), (ANCHO, PISO), 2)
+#Dibuja la linea del suelo
+
+9.
+for evento in pygame.event.get():
+    if evento.type == pygame.QUIT:
+        running = False
+    if evento.type == pygame.KEYDOWN:
+        if evento.key == pygame.K_SPACE and not salto:
+            carro_vel_y = -15
+            salto = True
+#Registra los eventos importantes
+#Si el jugador cierra la ventana, se termina el juego
+#Si el jugador apreta espacio Y no hay un salto ya en transición, el personaje saltará. (la velocidad es negativa para simular que el objeto se eleva)
+
+10.
+carro_vel_y += gravedad
+carro_y += carro_vel_y
+if carro_y >= PISO - carro_altura:
+    carro_y = PISO - carro_altura
+    salto = False
+#Se le aplica gravedad al personaje, moviendolo verticalmente. Y si toca el suelo, habilita la opción de saltar otra vez
+
+11.
+spawn += 1
+if spawn > 90:
+    nuevo_obs = pygame.Rect(ANCHO, PISO - obstaculo_alto, obstaculo_ancho, obstaculo_alto)
+    obstaculos.append(nuevo_obs)
+    spawn = 0
+#Se generan nuevos obstaculos cada 90 frames al borde derecho de la pantalla, cuyo equivalente serian cerca de 1.5 segundos.
+
+12.
+for obs in obstaculos:
+    obs.x -= obstaculo_vel
+#Mueve los obstáculos a la izquierda
+
+13.
+obstaculos = [obs for obs in obstaculos if obs.x + obstaculo_ancho > 0]
+#Se eliminan los obstáculos que se encuentren fuera del mapa (a la izquierda) y los borra de la lista.
+
+14.
+rect_carro = pygame.Rect(carro_x, carro_y, carro_ancho, carro_altura)
+for obs in obstaculos:
+    if rect_carro.colliderect(obs):
+        running = False
+#Registro de colision, compara el cuadrado dibujado (personaje) con los obstáculos, al haber colisión, se cierra el juego
+
+15.
+hacer_carrito(carro_x, carro_y)
+crear_obstaculos(obstaculos)
+pygame.display.flip()
+#Se dibuja al personaje y los osbtáculos. flip() es utilizado para actualizar la pantalla, mostrando todo lo dibujado anteriormente.
+
+
