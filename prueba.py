@@ -20,7 +20,7 @@ PISO = ALTURA - 50
 TECHO = 195
 DIST_MIN = 150
 
-
+#Funcion creacion de textos para pantallas
 def mostrar_texto(texto, tamano, color, x, y, centrado=True):
     fuente = pygame.font.SysFont(None, tamano)
     render = fuente.render(texto, True, color)
@@ -28,12 +28,13 @@ def mostrar_texto(texto, tamano, color, x, y, centrado=True):
     pantalla.blit(render, rect)
     return rect
 
+#Funcion para obtener posicion x mas lejana de los obstaculos
 def ultimo_obs(obstaculo):
     if not obstaculo:
-        return 0 
+        return 0
     return max([obs.x for obs in obstaculo])
 
-
+#Muestra pantalla de inicio
 def pantalla_inicio():
     while True:
         pantalla.fill(GRIS)
@@ -48,7 +49,7 @@ def pantalla_inicio():
                 sys.exit()
             if evento.type == pygame.MOUSEBUTTONDOWN:
                 if boton_inicio.collidepoint(evento.pos):
-                    return  # Inicia juego
+                    return
                 if boton_salida.collidepoint(evento.pos):
                     pygame.quit()
                     sys.exit()
@@ -56,12 +57,12 @@ def pantalla_inicio():
         pygame.display.flip()
         clock.tick(30)
 
+#Muestra pantalla final
 def pantalla_fin(punt_final):
     while True:
         pantalla.fill(GRIS)
         mostrar_texto("Has Perdido", 80, ROJO, ANCHO // 2, ALTURA // 3)
-        #muestra puntaje a la hora de chocar
-        mostrar_texto(f"Su puntaje fue: {punt_final}", 30, VERDE, ANCHO // 2, ALTURA // 2 - 20) 
+        mostrar_texto(f"Su puntaje fue: {punt_final}", 30, VERDE, ANCHO // 2, ALTURA // 2 - 20)
 
         boton_reiniciar = mostrar_texto("Reiniciar", 40, NEGRO, ANCHO // 2, ALTURA // 2 + 20)
         boton_salir = mostrar_texto("Salir", 40, NEGRO, ANCHO // 2, ALTURA // 2 + 80)
@@ -80,35 +81,70 @@ def pantalla_fin(punt_final):
         pygame.display.flip()
         clock.tick(30)
 
+#Funcion para generar obstaculos y alivianar a funcion juego()
+def crear_obstaculos(obstaculos, spawn_piso, spawn_techo):
+    spawn_piso += 1
+    spawn_techo += 1
+
+    if spawn_piso > random.randint(50, 100) and ANCHO - ultimo_obs(obstaculos) > DIST_MIN:
+        obstaculos.append(pygame.Rect(ANCHO, PISO - 50, 35, 50))
+        spawn_piso = 0
+
+    if spawn_techo > random.randint(150, 260) and ANCHO - ultimo_obs(obstaculos) > DIST_MIN:
+        obstaculos.append(pygame.Rect(ANCHO, TECHO, 35, 120))
+        spawn_techo = 0
+
+    return spawn_piso, spawn_techo
+
+#Se crea funcion para actualizar el movimienro del carro
+def actualizar_carro(carro_y, carro_vel_y, salto, carro_altura, agachado):
+    #Gravcedad
+    carro_vel_y += 1
+    carro_y += carro_vel_y
+
+    if carro_y >= PISO - carro_altura:
+        carro_y = PISO - carro_altura
+        salto = False
+    if carro_y <= TECHO:
+        carro_y = TECHO
+        carro_vel_y = 0
+
+    if agachado and not salto:
+        altura_actual = carro_altura // 2
+        y_actual = carro_y + carro_altura // 2
+    else:
+        altura_actual = carro_altura
+        y_actual = carro_y
+
+    return carro_y, carro_vel_y, salto, y_actual, altura_actual
+
+
+#Funcion principal del juego
 def juego():
     carro_ancho, carro_altura = 50, 50
     carro_x = 100
     carro_y = PISO - carro_altura
     carro_vel_y = 0
     salto = False
-    gravedad = 1
     agachado = False
 
     obstaculos = []
     obstaculo_ancho = 35
-    obstaculo_alto = 50
-    obstaculo_techo_ancho = 35
-    obstaculo_techo_alto = 120
     obstaculo_vel = 8
     spawn_piso = 0
     spawn_techo = 0
 
-    #cosas para texto de puntaje
+#texto puntaje
     puntaje = 0
     tiempo_punt = 0
-    letra_puntaje = pygame.font.SysFont(None, 50) 
+    letra_puntaje = pygame.font.SysFont(None, 50)
 
-    running = True
-    while running:
+    corriendo = True
+    while corriendo:
         clock.tick(FPS)
         pantalla.fill(BLANCO)
 
-        # Dibujo techo y piso
+        #dibuja piso y techo
         pygame.draw.line(pantalla, NEGRO, (0, PISO), (ANCHO, PISO), 2)
         pygame.draw.line(pantalla, NEGRO, (0, TECHO), (ANCHO, TECHO), 2)
 
@@ -126,57 +162,25 @@ def juego():
                 if (evento.key == pygame.K_DOWN) or (evento.key == pygame.K_s):
                     agachado = False
 
-        carro_vel_y += gravedad
-        carro_y += carro_vel_y
 
-        #Evitar que carro sobrepase el piso
-        if carro_y >= PISO - carro_altura:
-            carro_y = PISO - carro_altura
-            salto = False
+        # Llamar funcion para crear obstaculos
+        spawn_piso, spawn_techo = crear_obstaculos(obstaculos, spawn_piso, spawn_techo)
 
-        #Evitar que el carro sobrepase el techo
-        if carro_y <= TECHO:
-            carro_y = TECHO
-            carro_vel_y = 0
-
-        # Crear obstaculso piso
-        spawn_piso += 1
-        if spawn_piso > random.randint(50, 100):
-            if ANCHO - ultimo_obs(obstaculos) > DIST_MIN:
-                nuevo_obs_piso = pygame.Rect(ANCHO, PISO - obstaculo_alto, obstaculo_ancho, obstaculo_alto)
-                obstaculos.append(nuevo_obs_piso)
-                spawn_piso = 0
-
-        # Crear obstaculos techo
-        spawn_techo += 1
-        if spawn_techo > random.randint(150, 260):
-            if ANCHO - ultimo_obs(obstaculos) > DIST_MIN:
-                nuevo_obs_techo = pygame.Rect(ANCHO, TECHO, obstaculo_techo_ancho, obstaculo_techo_alto)
-                obstaculos.append(nuevo_obs_techo)
-                spawn_techo = 0
-
-        # Mover obstaculos
         for obs in obstaculos:
             obs.x -= obstaculo_vel
 
-        # Eliminar obstaculos fuera de pantalla
+            #Comprobacion de visibilidad de los osbtraculos
         obstaculos = [obs for obs in obstaculos if obs.x + obstaculo_ancho > 0]
 
-        if agachado and not salto:
-            altura_actual = carro_altura // 2
-            y_actual = carro_y + carro_altura // 2
-        else:
-            altura_actual = carro_altura
-            y_actual = carro_y
+        #Invocar funcion de movimiento de carro
+        carro_y, carro_vel_y, salto, y_actual, altura_actual = actualizar_carro(carro_y, carro_vel_y, salto, carro_altura, agachado)
 
         rect_carro = pygame.Rect(carro_x, y_actual, carro_ancho, altura_actual)
 
-         # Col. obstaculos
         for obs in obstaculos:
             if rect_carro.colliderect(obs):
-                running = False
+                corriendo = False
 
-         # Se dibuja 'carrito' y obstacsulos
         pygame.draw.rect(pantalla, ROJO, (carro_x, y_actual, carro_ancho, altura_actual))
         for obs in obstaculos:
             pygame.draw.rect(pantalla, VERDE, obs)
@@ -186,14 +190,13 @@ def juego():
             puntaje += 15
             tiempo_punt = 0
 
-        texto_puntaje =letra_puntaje.render(f"Puntaje actual: {puntaje}", True, VERDE)
+        texto_puntaje = letra_puntaje.render(f"Puntaje actual: {puntaje}", True, VERDE)
         pantalla.blit(texto_puntaje, (10, 10))
 
         pygame.display.flip()
 
-    #mostrar pant fin de juego
     pantalla_fin(puntaje)
 
-#incio juego desde menuy
+
 pantalla_inicio()
 juego()
